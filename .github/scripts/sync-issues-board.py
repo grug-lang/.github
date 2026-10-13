@@ -118,9 +118,39 @@ def set_status(item_id, option_id):
     )
 
 
+def delete_item(item_id):
+    graphql(
+        """mutation($project: ID!, $item: ID!) {
+          deleteProjectV2Item(input: {projectId: $project, itemId: $item}) { deletedItemId }
+        }""",
+        project=PROJECT_ID,
+        item=item_id,
+    )
+
+
+def add_with_status(content_id, option_id):
+    """Adds an issue and sets its status, or leaves the board as it was and fails.
+
+    The two are separate mutations. If the status update fails after the add succeeded, the item
+    this run just added is deleted again before failing, so the next run sees the issue as missing
+    and retries both, instead of skipping an item whose status was never set.
+    """
+    item_id = add_item(content_id)
+    time.sleep(MUTATION_PAUSE)
+    try:
+        set_status(item_id, option_id)
+    except SystemExit as error:
+        delete_item(item_id)
+        raise SystemExit(f"{error}\nremoved the item again so the next run retries it") from None
+
+
 def main(argv):
     dry_run = "--dry-run" in argv
     existing_file = argv[argv.index("--existing-items") + 1] if "--existing-items" in argv else None
+    # A snapshot can be stale, and adding an issue that is already on the board returns its existing
+    # item, whose status would then be overwritten. So a snapshot is only ever for a dry run.
+    if existing_file and not dry_run:
+        raise SystemExit("--existing-items requires --dry-run")
 
     if existing_file:
         with open(existing_file) as f:
@@ -146,8 +176,7 @@ def main(argv):
         if dry_run:
             print(f"would add {node['url']} as {label}")
             continue
-        item_id = add_item(node["id"])
-        set_status(item_id, status)
+        add_with_status(node["id"], status)
         print(f"added {node['url']} as {label}")
         time.sleep(MUTATION_PAUSE)
 
