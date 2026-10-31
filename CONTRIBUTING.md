@@ -1,6 +1,6 @@
 # Contributing to grug
 
-These guidelines are the same for every repository in the grug-lang organization. A repository can add rules of its own on top of them, such as grug-for-minecraft's `AGENTS.md`, but none contradicts them.
+These guidelines are the same for every repository in the grug-lang organization. A repository can add rules of its own on top of them, such as grug-for-minecraft's `AGENTS.md`, but none contradicts them. A repository may also accept pull requests only from its members, and grug-for-minecraft does: its own `CONTRIBUTING.md` says so.
 
 Create an issue before you make any pull request, as that gives everyone the chance to discuss it.
 
